@@ -62,7 +62,7 @@ Set up the repository at the desired location:
 # Choose location on server (glusterfs when using multiple nodes is recommended).
 mkdir -p /gluster_storage/swarm/wordpress/<DOMAINNAME>
 cd /gluster_storage/swarm/wordpress/<DOMAINNAME>
-git clone https://github.com/Sokrates1989/swarm_wordpress.git .
+git clone https://github.com/Sokrates1989/swarm-wordpress-nginx.git .
 ```
 
 ### Create Secrets in Docker Swarm
