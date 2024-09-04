@@ -22,8 +22,6 @@ This project is based on the original work by [Iiriix](https://github.com/iiriix
    - [Create Secrets in Docker Swarm](#create-secrets-in-docker-swarm)
    - [Copy Templates](#copy-templates)
    - [Edit Configuration](#edit-configuration)
-     - [.env](#env)
-     - [config-stack.yml](#config-stackyml)
 2. [Deployment](#deployment)
    - [Determine Readiness](#determine-readiness)
 3. [Maintenance](#maintenance)
@@ -223,11 +221,15 @@ Backup the database data using Phpmyadmin:
 # Remove all services in the stack.
 docker stack rm <STACK_NAME>
 
-# Only if you want to completely restart all data fresh.
-# !!! COMPLETE RESTART (old data is moved) !!!
+# Only if you want to completely re-install wordpress fresh.
+# !!! RE-INSTALL WORDPRESS COMPLETELY (old data is MOVED, not deleted) !!!
 mv wordpress_data/ wordpress_data_old
 mv db_data/ db_data_old
-git restore db_data/.gitkeep wordpress_data/.gitkeep
+rm -rf nginx_cache
+# Alternative to moving (COMPLETELY ERASES DATA): rm -rf wordpress_data db_data nginx_cache
+
+# Re-Create directories.
+git restore db_data/.gitkeep wordpress_data/.gitkeep nginx_cache/.gitkeep
 
 # Re-deploy.
 docker stack deploy -c <(docker-compose config) <STACK_NAME>
