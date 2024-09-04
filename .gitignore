@@ -1,0 +1,24 @@
+# env files
+*.env
+
+# swap files
+*.swp
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+# Ignore content of nginx_cache.
+nginx_cache/*
+# but keep folder structure itself, by keeping only the .gitkeep file within.
+!nginx_cache/.gitkeep
+
+# Ignore content of db_data.
+db_data/*
+# but keep folder structure itself, by keeping only the .gitkeep file within.
+!db_data/.gitkeep
+
+# Ignore content of wordpress_data.
+wordpress_data/*
+# but keep folder structure itself, by keeping only the .gitkeep file within.
+!wordpress_data/.gitkeep
+
