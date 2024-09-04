@@ -1,6 +1,9 @@
 # env files
 *.env
 
+# confi-stack.yml
+config-stack.yml
+
 # swap files
 *.swp
 
