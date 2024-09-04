@@ -98,23 +98,30 @@ cp config-stack.yml.template config-stack.yml
 
 ### Edit Configuration
 
-#### .env
-
-Edit the variables in the `.env` file:
-
-```bash
-vi .env
-```
-
 #### config-stack.yml
 
-Replace the placeholder with the previously created [Docker Swarm Secrets](#create-secrets-in-docker-swarm):
+Replace the placeholder with the previously created [Docker Swarm Secrets](#create-secrets-in-docker-swarm)
 ```bash
 # Change "MYSQL_ROOTPW_WORDPRESS_PLACEHOLDER" to your own secret "MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX".
 sed -i -e 's/MYSQL_ROOTPW_WORDPRESS_PLACEHOLDER/MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX/g' ./config-stack.yml
 
 # Change "MYSQL_USERPW_WORDPRESS_PLACEHOLDER" to your own secret "MYSQL_USERPW_WORDPRESS_XXXXXXXXX".
 sed -i -e 's/MYSQL_USERPW_WORDPRESS_PLACEHOLDER/MYSQL_USERPW_WORDPRESS_XXXXXXXXX/g' ./config-stack.yml
+```
+
+#### .env
+
+Replace the default domain with the actual domain as setup in [Domains and Subdomains](#domains-and-subdomains) 
+```bash
+sed -i -e 's/default-domain.com/your-domain.com/g' ./.env
+
+# Example for test.felicitas-wisdom.de.
+sed -i -e 's/default-domain.com/test.felicitas-wisdom.de/g' ./.env
+```
+
+Edit the variables in the `.env` file:
+```bash
+vi .env
 ```
 
 ## Deployment
