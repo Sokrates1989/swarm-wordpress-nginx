@@ -86,7 +86,7 @@ services:
         labels:
           - traefik.enable=true
           - traefik.constraint-label=traefik-public
-          - traefik.docker.network=${TRAEFIK_NETWORK_NAME}
+          - traefik.docker.network=traefik
           - traefik.http.routers.${STACK_NAME}_wordpress.service=${STACK_NAME}_wordpress
           - traefik.http.services.${STACK_NAME}_wordpress.loadbalancer.server.port=80
           - traefik.http.routers.${STACK_NAME}_wordpress.rule=Host(`${HOMEPAGE_URL}`)
@@ -117,7 +117,7 @@ services:
     environment:
       - PMA_HOST=${STACK_NAME}_db
     networks:
-      - ${TRAEFIK_NETWORK_NAME}
+      - traefik
       - wordpress_test_backend
     deploy:
       labels:
