@@ -25,19 +25,22 @@ This project is based on the original work by [Iiriix](https://github.com/iiriix
    - [Copy Templates](#copy-templates)
    - [Edit Configuration](#edit-configuration)
      - [config-stack.yml](#config-stackyml)
-     - [Changing the WordPress Image](#changing-the-wordpress-image)
-   - [Cache Configuration](#cache-configuration)
-     - [Replacement Commands for Cache Configuration](#replacement-commands-for-cache-configuration)
-     - [Suggested Configurations Based on Traffic Scenarios](#suggested-configurations-based-on-traffic-scenarios)
-   - [.env Configuration](#env-configuration)
+       - [Changing the WordPress Image](#changing-the-wordpress-image)
+     - [Cache Configuration](#cache-configuration)
+        - [Replacement Commands for Cache Configuration](#replacement-commands-for-cache-configuration)
+        - [Suggested Configurations Based on Traffic Scenarios](#suggested-configurations-based-on-traffic-scenarios)
+     - [.env Configuration](#env)
 
 2. [Deployment](#deployment)
    - [Determine Readiness](#determine-readiness)
+   - [Install Wordpress](#install-wordpress)
+   - [Clear Server Cache](#clear-server-cache)
 
 3. [Maintenance](#maintenance)
    - [Purge Cache](#purge-cache)
    - [Scaling](#scaling)
-     - [Manual Scaling](#manually)
+     - [Manual Scaling](#manual-scaling)
+     - [Automatic Scaling](#automatic-scaling)
    - [Database Management](#mysql-database)
    - [Caching in Nginx](#caching)
    - [PHP Configuration](#php-phpini)
@@ -87,12 +90,12 @@ Create the necessary secrets in Docker Swarm:
 # Replace "XXXXXXXXX" with custom name. "MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX": (e.g. using a website called "foo-bar.com" -> MYSQL_ROOTPW_WORDPRESS_FOO_BAR)
 
 # MYSQL_ROOTPW_WORDPRESS_PLACEHOLDER.
-vi secret.txt  # Then insert password (Make sure the password does not contain any backslashes "\") and save the file.
+vi secret.txt  # Then insert password (Make sure the password does not contain any backslashes (\) single quotes (') or double quotes (") ) and save the file.
 docker secret create MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX secret.txt # Change MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX
 rm secret.txt
 
 # MYSQL_USERPW_WORDPRESS_PLACEHOLDER.
-vi secret.txt  # Then insert password (Make sure the password does not contain any backslashes "\") and save the file.
+vi secret.txt  # Then insert password (Make sure the password does not contain any backslashes (\) single quotes (') or double quotes (") ) and save the file.
 docker secret create MYSQL_USERPW_WORDPRESS_XXXXXXXXX secret.txt # Change MYSQL_USERPW_WORDPRESS_XXXXXXXXX
 rm secret.txt
 ```
@@ -114,7 +117,7 @@ cp apps/nginx/nginx_conf/conf.d/default.conf.template apps/nginx/nginx_conf/conf
 
 ## Edit Configuration
 
-#### config-stack.yml
+### config-stack.yml
 
 Replace the placeholder with the previously created [Docker Swarm Secrets](#create-secrets-in-docker-swarm)
 ```bash
@@ -149,12 +152,12 @@ You can find and explore all official WordPress Docker images, including those w
 
 [Official WordPress Docker Hub Images](https://hub.docker.com/_/wordpress)
 
-## Cache Configuration
+### Cache Configuration
 
 The following settings allow you to control the cache size and duration in Nginx. This can be useful in performance optimization by controlling how long and how much data is cached, reducing server load and speeding up response times.
 
 
-### Replacement Commands for Cache Configuration
+#### Replacement Commands for Cache Configuration
 
 Use the following commands to replace placeholders in the `default.conf` file with real values for cache size and duration.
 
@@ -167,7 +170,7 @@ sed -i -e 's/NGINX_CACHE_DURATION_PLACEHOLDER/30m/g' ./apps/nginx/nginx_conf/con
 ```
 
 
-### What values should I use?
+#### What values should I use?
 - **NGINX_MAX_CACHE_SIZE_PLACEHOLDER**: Specifies the maximum size of the cache.
     - **Supported Units**: 
         - k: Kilobytes (1 k = 1024 bytes)
@@ -207,7 +210,7 @@ sed -i -e 's/NGINX_CACHE_DURATION_PLACEHOLDER/30m/g' ./apps/nginx/nginx_conf/con
     - Cache Size: `5g`
     - High-traffic sites can benefit from extended cache durations and larger cache sizes to handle heavy loads and frequent user requests.
 
-## .env
+### .env
 
 Replace the default domain with the actual domain as setup in [Domains and Subdomains](#domains-and-subdomains) 
 ```bash
@@ -220,7 +223,7 @@ sed -i -e 's/default-domain.com/test.felicitas-wisdom.de/g' ./.env
 Edit the variables in the `.env` file:
 ```bash
 vi .env
-```        |
+```
 
 # Deployment
 
@@ -255,9 +258,17 @@ docker service logs <STACK_NAME>_db
 
 If the above logs do not appear after 20 minutes, call the site via a browser (it should display a 404 error or another error). This will trigger WordPress to start copying files. Continue watching the logs as described above.
 
+### Install Wordpress
+
+Go to the url setup in [Domains and Subdomains](#domains-and-subdomains) and follow the short wordpress install guide to install wordpress.
+
+### Clear Server Cache
+
+After having installed wordpress for the first time, nginx still has a redirect to the install page cached, so please [purge the cache](#purge-cache). You will then have successfully installed wordpress on your swarm with a scalable, caching nginx proxy.
+
 # Maintenance
 
-### Purge Cache
+## Purge Cache
 
 Remove the contents of the `nginx_cache` directory to purge the cache:
 
@@ -268,9 +279,9 @@ rm -rf nginx_cache/*
 No need to reload anything afterwards -> If ngninx notices, there is no cache anymore, it will automatically call wordpress to create new cache, once someone calls the page.
 - However, if you also want that a new cache to be created for certain pages (mostly the homepage) -> Simply open thoses pages in any webbrowser as a non-logged-in user (Open new browser in incognity mode for example).
 
-### Scaling
+## Scaling
 
-#### Manually
+### Manual Scaling
 
 You can scale the `wordpress` and `nginx` services manually. Since nginx caches the content anyhow I would suggest to keep wordpress at 1 replica and only scale nginx.
 
@@ -287,23 +298,23 @@ docker service scale my_wordpress_nginx=1
 # docker service scale my_wordpress_wordpress=1
 ```
 
-#### Automatically
+### Automatic Scaling
 
 By changing the autoscaler settings in .env and installing [Swarm Autoscaler](https://github.com/Sokrates1989/swarm-monitoring-autoscaler), the nginx replicas can be scaled based on the nginx serivce workload.
 
-### MySQL Database
+## MySQL Database
 
 The stack uses a MySQL Docker image to initialize the required database. If you prefer not to use Docker for your database, you can remove the MySQL service from the `docker-stack.yml` file and set the correct environment variables for the WordPress database.
 
-### Caching
+## Caching
 
-The Nginx image is configured to support `fastcgi_cache`. It caches FPM responses for 2 days. To see content changes, you need to either wait for 2 days for the cache to be dropped or [remove the cache manually](#purge-cache). If you don't need caching or want to adjust the cache time, you can edit or remove the relevant configurations from the Nginx config file (`./apps/nginx/nginx_conf/conf.d/default.conf`).
+The Nginx image is configured to support `fastcgi_cache`. It caches FPM responses for the duration setup in [Cache Configuration](#cache-configuration). To see content changes, you need to either wait for this duration for the cache to be dropped or [remove the cache manually](#purge-cache). If you don't need caching or want to adjust the cache time, you can edit or remove the relevant configurations from the Nginx config file (`./apps/nginx/nginx_conf/conf.d/default.conf`).
 
-### PHP (php.ini)
+## PHP (php.ini)
 
 The `php.ini` file is mounted to the WordPress containers. To change parameters such as `post_max_size` or `upload_max_filesize`, edit the file in `./apps/wordpress/php.ini`.
 
-### Volumes
+## Volumes
 
 This stack has three volumes to persist the data:
 
@@ -315,7 +326,7 @@ This stack has three volumes to persist the data:
 
 ### Backup Database
 
-Backup the database data using Phpmyadmin:
+Backup the database data using [Phpmyadmin](#access-database):
 
 1. Log into Phpmyadmin.
 2. Choose the database in the left panel with the name mentioned in `.env` under `MYSQL_DATABASE_NAME`.
