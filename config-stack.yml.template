@@ -70,9 +70,6 @@ services:
     networks:
       - wordpress_test_backend
       - traefik
-    environment:
-      - NGINX_CACHE_DURATION=${NGINX_CACHE_DURATION}
-      - NGINX_MAX_CACHE_SIZE=${NGINX_MAX_CACHE_SIZE}
     deploy:
         mode: replicated
         replicas: ${NGINX_REPLICAS}
