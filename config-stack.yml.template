@@ -26,7 +26,7 @@ services:
           - "traefik.enable=false"
 
   wordpress:
-    image: wordpress:6.2.2-php8.0-fpm-alpine
+    image: wordpress:php8.3-fpm-alpine
     volumes:
       - ${DATA_ROOT}/wordpress_data:/var/www/html
       - ${DATA_ROOT}/apps/wordpress/php.ini:/usr/local/etc/php/php.ini
@@ -41,7 +41,6 @@ services:
         WORDPRESS_DB_USER: ${MYSQL_USER_NAME}
         WORDPRESS_DB_PASSWORD_FILE: /run/secrets/MYSQL_USERPW_WORDPRESS_PLACEHOLDER
         WORDPRESS_DB_NAME: ${MYSQL_DATABASE_NAME}
-        WORDPRESS_TABLE_PREFIX: wp_
         # To handle subdomains.
         WORDPRESS_CONFIG_EXTRA: |
           define('WP_SITEURL', 'https://${HOMEPAGE_URL}');
@@ -71,6 +70,9 @@ services:
     networks:
       - wordpress_test_backend
       - traefik
+    environment:
+      - NGINX_CACHE_DURATION=${NGINX_CACHE_DURATION}
+      - NGINX_MAX_CACHE_SIZE=${NGINX_MAX_CACHE_SIZE}
     deploy:
         mode: replicated
         replicas: ${NGINX_REPLICAS}

@@ -15,44 +15,59 @@
 ### Original Author
 This project is based on the original work by [Iiriix](https://github.com/iiriix). Source project: [docker-swarm-wordpress](https://github.com/iiriix/docker-swarm-wordpress). For more info view [Attribution](#attribution).
 
+
 ## Table of Contents
+
 1. [Initial Setup](#initial-setup)
    - [Domains and Subdomains](#domains-and-subdomains)
    - [Setup Repository](#setup-repository)
    - [Create Secrets in Docker Swarm](#create-secrets-in-docker-swarm)
    - [Copy Templates](#copy-templates)
    - [Edit Configuration](#edit-configuration)
+     - [config-stack.yml](#config-stackyml)
+     - [Changing the WordPress Image](#changing-the-wordpress-image)
+   - [Cache Configuration](#cache-configuration)
+     - [Replacement Commands for Cache Configuration](#replacement-commands-for-cache-configuration)
+     - [Suggested Configurations Based on Traffic Scenarios](#suggested-configurations-based-on-traffic-scenarios)
+   - [.env Configuration](#env-configuration)
+
 2. [Deployment](#deployment)
    - [Determine Readiness](#determine-readiness)
+
 3. [Maintenance](#maintenance)
    - [Purge Cache](#purge-cache)
    - [Scaling](#scaling)
-   - [MySQL Database](#mysql-database)
-   - [Caching](#caching)
-   - [PHP Configuration (php.ini)](#php-phpini)
+     - [Manual Scaling](#manually)
+   - [Database Management](#mysql-database)
+   - [Caching in Nginx](#caching)
+   - [PHP Configuration](#php-phpini)
    - [Volumes](#volumes)
+
 4. [Re-Deploy to Fix Errors](#re-deploy-to-fix-errors)
    - [Backup Database](#backup-database)
    - [Actual Re-Deployment](#actual-re-deployment)
-5. [Access Database](#access-database)
+   - [Wait for Readiness](#wait-for-readiness)
+
+5. [Access Database via Phpmyadmin](#access-database)
    - [Enable Phpmyadmin via Command Line](#option-1-enable-phpmyadmin-via-command-line)
    - [Enable Phpmyadmin via .env](#option-2-enable-phpmyadmin-via-env)
-   - [Confirm Phpmyadmin is Enabled](#confirm-phpmyadmin-enabled)
    - [Log in to Phpmyadmin](#log-in-to-phpmyadmin)
+
 6. [Attribution](#attribution)
+
 7. [License](#license)
 
-## Initial Setup
+# Initial Setup
 
-### Domains and Subdomains
+## Domains and Subdomains
 
 Ensure that the domains and subdomains exist and point to the manager of the swarm.
 
 Example for `test.felicitas-wisdom.de`:
 - `test.felicitas-wisdom.de`
-- `php.test.felicitas-wisdom.de`
+- `db.test.felicitas-wisdom.de`
 
-### Setup Repository
+## Setup Repository
 
 Set up the repository at the desired location:
 
@@ -63,7 +78,7 @@ cd /gluster_storage/swarm/wordpress/<DOMAINNAME>
 git clone https://github.com/Sokrates1989/swarm-wordpress-nginx.git .
 ```
 
-### Create Secrets in Docker Swarm
+## Create Secrets in Docker Swarm
 
 Create the necessary secrets in Docker Swarm:
 
@@ -82,7 +97,7 @@ docker secret create MYSQL_USERPW_WORDPRESS_XXXXXXXXX secret.txt # Change MYSQL_
 rm secret.txt
 ```
 
-### Copy Templates
+## Copy Templates
 
 Copy the necessary template files:
 
@@ -92,9 +107,12 @@ cp .env.template .env
 
 # Copy "config-stack.yml.template" to "config-stack.yml".
 cp config-stack.yml.template config-stack.yml
+
+# Copy nginx default.conf template.
+cp apps/nginx/nginx_conf/conf.d/default.conf.template apps/nginx/nginx_conf/conf.d/default.conf
 ```
 
-### Edit Configuration
+## Edit Configuration
 
 #### config-stack.yml
 
@@ -107,7 +125,89 @@ sed -i -e 's/MYSQL_ROOTPW_WORDPRESS_PLACEHOLDER/MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX
 sed -i -e 's/MYSQL_USERPW_WORDPRESS_PLACEHOLDER/MYSQL_USERPW_WORDPRESS_XXXXXXXXX/g' ./config-stack.yml
 ```
 
-#### .env
+### Changing the WordPress Image
+
+In the config-stack.yml file, you can specify which WordPress Docker image you want to use. This allows you to choose different PHP versions or specialized WordPress images that fit your deployment needs.
+
+#### For example, to use WordPress with PHP 8.3 (as provided by the default image)
+
+```yaml
+services:
+  wordpress:
+    image: wordpress:php8.3-fpm-alpine
+```
+
+#### If you need to downgrade to PHP 8.2 for compatibility reasons, you can change the image like this
+
+```yaml
+services:
+  wordpress:
+    image: wordpress:6.6-php8.2-fpm-alpine
+```
+
+You can find and explore all official WordPress Docker images, including those with different PHP versions and configurations, on the official Docker Hub WordPress page:
+
+[Official WordPress Docker Hub Images](https://hub.docker.com/_/wordpress)
+
+## Cache Configuration
+
+The following settings allow you to control the cache size and duration in Nginx. This can be useful in performance optimization by controlling how long and how much data is cached, reducing server load and speeding up response times.
+
+
+### Replacement Commands for Cache Configuration
+
+Use the following commands to replace placeholders in the `default.conf` file with real values for cache size and duration.
+
+```bash
+# Replace the cache size placeholder with your desired value.
+sed -i -e 's/NGINX_MAX_CACHE_SIZE_PLACEHOLDER/1g/g' ./apps/nginx/nginx_conf/conf.d/default.conf
+
+# Replace the cache duration placeholder with your desired value.
+sed -i -e 's/NGINX_CACHE_DURATION_PLACEHOLDER/30m/g' ./apps/nginx/nginx_conf/conf.d/default.conf
+```
+
+
+### What values should I use?
+- **NGINX_MAX_CACHE_SIZE_PLACEHOLDER**: Specifies the maximum size of the cache.
+    - **Supported Units**: 
+        - k: Kilobytes (1 k = 1024 bytes)
+        - m: Megabytes (1 m = 1024 kilobytes)
+        - g: Gigabytes (1 g = 1024 megabytes)
+    - **Recommended Values**: 
+        - Small Site: `500m`
+        - Medium Site: `1g`
+        - Large Site: `5g` or more based on traffic
+
+- **NGINX_CACHE_DURATION_PLACEHOLDER**: Determines how long cached data is kept before it is considered stale.
+    - **Supported Units**: 
+        - ms: Milliseconds (1 ms = 0.001 seconds)
+        - s: Seconds (1 s = 1000 ms)
+        - m: Minutes (1 m = 60 seconds)
+        - h: Hours (1 h = 60 minutes)
+        - d: Days (1 d = 24 hours)
+    - **Recommended Values**: 
+        - Low Traffic Sites: `30m` (30 minutes)
+        - Medium Traffic Sites: `1h` (1 hour)
+        - High Traffic Sites: `6h` (6 hours)
+
+#### Suggested Configurations Based on Traffic Scenarios
+
+1. **Low Traffic Blog or Small Site**: 
+    - Cache Duration: `15m`
+    - Cache Size: `200m`
+    - This setup is ideal for small blogs or websites with limited traffic, providing a balance between caching efficiency and storage usage.
+
+2. **Medium Traffic Business Site**:
+    - Cache Duration: `1h`
+    - Cache Size: `1g`
+    - Suitable for sites with moderate traffic where performance is important, but the cache size can still be limited.
+
+3. **High Traffic E-commerce or News Site**:
+    - Cache Duration: `6h`
+    - Cache Size: `5g`
+    - High-traffic sites can benefit from extended cache durations and larger cache sizes to handle heavy loads and frequent user requests.
+
+## .env
 
 Replace the default domain with the actual domain as setup in [Domains and Subdomains](#domains-and-subdomains) 
 ```bash
@@ -120,15 +220,15 @@ sed -i -e 's/default-domain.com/test.felicitas-wisdom.de/g' ./.env
 Edit the variables in the `.env` file:
 ```bash
 vi .env
-```
+```        |
 
-## Deployment
+# Deployment
 
 Deploy the service on the swarm using the `.env` file via Docker Compose:
 
 ```bash
 # https://github.com/moby/moby/issues/29133.
-docker stack deploy -c <(docker-compose -f config-stack.yml config)  <STACK_NAME>
+docker stack deploy -c <(docker-compose -f config-stack.yml config) <STACK_NAME>
 ```
 
 ### Determine Readiness
@@ -142,20 +242,20 @@ docker stack services <STACK_NAME>
 
 # In case of unequal replicas, check issues of the service.
 docker service ps <STACK_NAME>_wordpress --no-trunc
-docker service ps <STACK_NAME>_wordpress_db --no-trunc
+docker service ps <STACK_NAME>_db --no-trunc
 
 # Watch until the WordPress logs change to confirm readiness.
 watch docker service logs <STACK_NAME>_wordpress
 # Look for "Complete! WordPress has been successfully copied to /var/www/html" or "NOTICE: ready to handle connections".
 
 # Desired log entry for WordPress DB.
-docker service logs <STACK_NAME>_wordpress_db
+docker service logs <STACK_NAME>_db
 # Look for "mysqld: ready for connections".
 ```
 
 If the above logs do not appear after 20 minutes, call the site via a browser (it should display a 404 error or another error). This will trigger WordPress to start copying files. Continue watching the logs as described above.
 
-## Maintenance
+# Maintenance
 
 ### Purge Cache
 
@@ -165,22 +265,31 @@ Remove the contents of the `nginx_cache` directory to purge the cache:
 rm -rf nginx_cache/*
 ```
 
+No need to reload anything afterwards -> If ngninx notices, there is no cache anymore, it will automatically call wordpress to create new cache, once someone calls the page.
+- However, if you also want that a new cache to be created for certain pages (mostly the homepage) -> Simply open thoses pages in any webbrowser as a non-logged-in user (Open new browser in incognity mode for example).
+
 ### Scaling
 
-You can scale the `wordpress` and `nginx` services easily:
+#### Manually
+
+You can scale the `wordpress` and `nginx` services manually. Since nginx caches the content anyhow I would suggest to keep wordpress at 1 replica and only scale nginx.
 
 ```bash
 # To scale up:
 docker service scale my_wordpress_nginx=3
-docker service scale my_wordpress_wordpress=3
+# docker service scale my_wordpress_wordpress=3
 
 # Check whether all replicas are running.
 docker service ls
 
 # To scale down:
 docker service scale my_wordpress_nginx=1
-docker service scale my_wordpress_wordpress=1
+# docker service scale my_wordpress_wordpress=1
 ```
+
+#### Automatically
+
+By changing the autoscaler settings in .env and installing [Swarm Autoscaler](https://github.com/Sokrates1989/swarm-monitoring-autoscaler), the nginx replicas can be scaled based on the nginx serivce workload.
 
 ### MySQL Database
 
@@ -202,7 +311,7 @@ This stack has three volumes to persist the data:
 * `./db_data`: Stores the database files.
 * `./nginx_cache`: Stores cached Nginx sites, allowing you to [purge the cache manually](#purge-cache).
 
-## Re-Deploy to Fix Errors
+# Re-Deploy to Fix Errors
 
 ### Backup Database
 
@@ -232,9 +341,13 @@ rm -rf nginx_cache
 git restore db_data/.gitkeep wordpress_data/.gitkeep nginx_cache/.gitkeep
 
 # Re-deploy.
-docker stack deploy -c <(docker-compose config) <STACK_NAME>
+docker stack deploy -c <(docker-compose -f config-stack.yml config) <STACK_NAME>
 ```
-## Access Database
+
+### Wait for readiness
+[Determine Readiness](#determine-readiness)
+
+# Access Database
 
 ### Option 1: Enable Phpmyadmin via Command Line
 
@@ -267,7 +380,7 @@ docker stack services <STACK_NAME>
 
 Access the Phpmyadmin interface using the URL set up in `.env`:
 
-- `https://php.test.felicitas-wisdom.de`
+- Example: `https://db.test.felicitas-wisdom.de`
 
 
 ## Attribution
