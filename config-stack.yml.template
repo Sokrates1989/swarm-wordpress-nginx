@@ -90,14 +90,14 @@ services:
           - traefik.http.services.${STACK_NAME}_wordpress.loadbalancer.server.port=80
           - traefik.http.routers.${STACK_NAME}_wordpress.rule=Host(`${HOMEPAGE_URL}`)
           - traefik.http.routers.${STACK_NAME}_wordpress.entrypoints=http,web
-          - traefik.http.routers.${STACK_NAME}_wordpress.middlewares=https-redir@docker
           - traefik.http.routers.${STACK_NAME}_wordpress-secure.rule=Host(`${HOMEPAGE_URL}`)
           - traefik.http.routers.${STACK_NAME}_wordpress-secure.entrypoints=https
           - traefik.http.routers.${STACK_NAME}_wordpress-secure.tls=true
           - traefik.http.routers.${STACK_NAME}_wordpress-secure.tls.certresolver=le
           #### Middleware for HTTP to HTTPS redirection
-          - traefik.http.middlewares.${STACK_NAME}_https-redir.redirectscheme.scheme=https
-          - traefik.http.middlewares.${STACK_NAME}_https-redir.redirectscheme.permanent=true
+          - traefik.http.middlewares.${STACK_NAME}_https-redirect.redirectscheme.scheme=https
+          - traefik.http.middlewares.${STACK_NAME}_https-redirect.redirectscheme.permanent=true
+          - traefik.http.routers.${STACK_NAME}_wordpress.middlewares=${STACK_NAME}_https-redirect
           # www-redir.
           - "traefik.http.middlewares.${STACK_NAME}_www-redir.redirectregex.regex=^https://www.(.*)"
           - "traefik.http.middlewares.${STACK_NAME}_www-redir.redirectregex.replacement=https://$${1}"
