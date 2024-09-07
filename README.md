@@ -287,15 +287,15 @@ You can scale the `wordpress` and `nginx` services manually. Since nginx caches 
 
 ```bash
 # To scale up:
-docker service scale my_wordpress_nginx=3
-# docker service scale my_wordpress_wordpress=3
+docker service scale <STACK_NAME>_nginx=3
+docker service scale <STACK_NAME>_wordpress=3
 
 # Check whether all replicas are running.
 docker service ls
 
 # To scale down:
-docker service scale my_wordpress_nginx=1
-# docker service scale my_wordpress_wordpress=1
+docker service scale <STACK_NAME>_nginx=1
+docker service scale <STACK_NAME>_wordpress=1
 ```
 
 ### Automatic Scaling
