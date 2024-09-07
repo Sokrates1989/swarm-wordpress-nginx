@@ -121,11 +121,14 @@ cp apps/nginx/nginx_conf/conf.d/default.conf.template apps/nginx/nginx_conf/conf
 
 Replace the placeholder with the previously created [Docker Swarm Secrets](#create-secrets-in-docker-swarm)
 ```bash
-# Change "MYSQL_ROOTPW_WORDPRESS_PLACEHOLDER" to your own secret "MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX".
+# Replace placeholders with your your own secrets.
 sed -i -e 's/MYSQL_ROOTPW_WORDPRESS_PLACEHOLDER/MYSQL_ROOTPW_WORDPRESS_XXXXXXXXX/g' ./config-stack.yml
-
-# Change "MYSQL_USERPW_WORDPRESS_PLACEHOLDER" to your own secret "MYSQL_USERPW_WORDPRESS_XXXXXXXXX".
 sed -i -e 's/MYSQL_USERPW_WORDPRESS_PLACEHOLDER/MYSQL_USERPW_WORDPRESS_XXXXXXXXX/g' ./config-stack.yml
+
+
+# Example for test.felicitas-wisdom.de using Secret names "MYSQL_ROOTPW_WORDPRESS_TEST_FEWI_DE" and "MYSQL_USERPW_WORDPRESS_TEST_FEWI_DE".
+sed -i -e 's/MYSQL_ROOTPW_WORDPRESS_PLACEHOLDER/MYSQL_ROOTPW_WORDPRESS_TEST_FEWI_DE/g' ./config-stack.yml
+sed -i -e 's/MYSQL_USERPW_WORDPRESS_PLACEHOLDER/MYSQL_USERPW_WORDPRESS_TEST_FEWI_DE/g' ./config-stack.yml
 ```
 
 ### Changing the WordPress Image
@@ -236,8 +239,7 @@ docker stack deploy -c <(docker-compose -f config-stack.yml config) <STACK_NAME>
 
 ### Determine Readiness
 
-Check if there are any issues with the initial deployment:
-
+#### Check if there are any issues with the initial deployment
 ```bash
 # Check service status.
 docker stack services <STACK_NAME>
@@ -246,7 +248,11 @@ docker stack services <STACK_NAME>
 # In case of unequal replicas, check issues of the service.
 docker service ps <STACK_NAME>_wordpress --no-trunc
 docker service ps <STACK_NAME>_db --no-trunc
+```
 
+
+#### Wait until Wordpress and Database are ready
+```bash
 # Watch until the WordPress logs change to confirm readiness.
 watch docker service logs <STACK_NAME>_wordpress
 # Look for "Complete! WordPress has been successfully copied to /var/www/html" or "NOTICE: ready to handle connections".
