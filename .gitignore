@@ -5,7 +5,7 @@
 config-stack.yml
 
 # default.conf.
-apps\nginx\nginx_conf\conf.d\default.conf
+apps/nginx/nginx_conf/conf.d/default.conf
 
 # swap files
 *.swp
