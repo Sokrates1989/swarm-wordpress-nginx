@@ -33,7 +33,7 @@ services:
     networks:
       - wordpress_test_backend
     ports:
-      - "9070:9000"
+      - "${WORDPRESS_INGRESS_PORT}:9000"
     secrets:
       - "MYSQL_USERPW_WORDPRESS_PLACEHOLDER"
     environment:
