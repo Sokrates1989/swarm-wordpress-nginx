@@ -56,9 +56,13 @@ This project is based on the original work by [Iiriix](https://github.com/iiriix
    - [Enable Phpmyadmin via .env](#option-2-enable-phpmyadmin-via-env)
    - [Log in to Phpmyadmin](#log-in-to-phpmyadmin)
 
-6. [Attribution](#attribution)
+6. [Developer/Maintainer Information](#developermaintainer-information)
+   - [Building and Pushing the Alpine Nginx Wordpress Docker Image](#building-and-pushing-the-alpine-nginx-wordpress-docker-image)
 
-7. [License](#license)
+7. [Attribution](#attribution)
+
+8. [License](#license)
+
 
 # Initial Setup
 
@@ -399,6 +403,30 @@ Access the Phpmyadmin interface using the URL set up in `.env`:
 
 - Example: `https://db.test.felicitas-wisdom.de`
 
+
+# Developer/Maintainer Information
+
+## Building and Pushing the Alpine Nginx Wordpress Docker Image
+
+To build and push the Alpine Nginx Wordpress Docker image with both the `:latest` and `:1.26.2` tags, follow these steps:
+
+### Building the Alpine Nginx Wordpress Docker Image
+
+Build the Docker image locally with the following commands:
+
+```bash
+docker build -t sokrates1989/alpine-nginx-wp:latest -f apps/nginx/Dockerfile .
+docker build -t sokrates1989/alpine-nginx-wp:1.26.2 -f apps/nginx/Dockerfile .
+```
+
+### Pushing to Docker Hub
+
+After building the image, push it to your Docker Hub repository with both tags:
+
+```bash
+docker push sokrates1989/alpine-nginx-wp:latest
+docker push sokrates1989/alpine-nginx-wp:1.26.2
+```
 
 ## Attribution
 This project is based on the original work by [Iiriix](https://github.com/iiriix). Source project: [docker-swarm-wordpress](https://github.com/iiriix/docker-swarm-wordpress). 

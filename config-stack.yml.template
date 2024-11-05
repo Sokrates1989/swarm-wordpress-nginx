@@ -61,7 +61,7 @@ services:
             - "traefik.enable=false"
 
   nginx:
-    image: iiriix/nginx-wp:1.18
+    image: sokrates1989/alpine-nginx-wp:1.26.2
     volumes:
       - ${DATA_ROOT}/apps/nginx/nginx_conf/nginx.conf:/etc/nginx/nginx.conf
       - ${DATA_ROOT}/apps/nginx/nginx_conf/conf.d/default.conf:/etc/nginx/conf.d/default.conf
