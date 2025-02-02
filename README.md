@@ -159,12 +159,12 @@ You can find and explore all official WordPress Docker images, including those w
 
 [Official WordPress Docker Hub Images](https://hub.docker.com/_/wordpress)
 
-### Cache Configuration
+## Cache Configuration
 
 The following settings allow you to control the cache size and duration in Nginx. This can be useful in performance optimization by controlling how long and how much data is cached, reducing server load and speeding up response times.
 
 
-#### Replacement Commands for Cache Configuration
+### Replacement Commands for Cache Configuration
 
 Use the following commands to replace placeholders in the `default.conf` file with real values for cache size and duration.
 
@@ -173,11 +173,12 @@ Use the following commands to replace placeholders in the `default.conf` file wi
 sed -i -e 's/NGINX_MAX_CACHE_SIZE_PLACEHOLDER/1g/g' ./apps/nginx/nginx_conf/conf.d/default.conf
 
 # Replace the cache duration placeholder with your desired value.
-sed -i -e 's/NGINX_CACHE_DURATION_PLACEHOLDER/30m/g' ./apps/nginx/nginx_conf/conf.d/default.conf
+sed -i -e 's/NGINX_CACHE_DURATION_PLACEHOLDER/365d/g' ./apps/nginx/nginx_conf/conf.d/default.conf
 ```
 
 
 #### What values should I use?
+
 - **NGINX_MAX_CACHE_SIZE_PLACEHOLDER**: Specifies the maximum size of the cache.
     - **Supported Units**: 
         - k: Kilobytes (1 k = 1024 bytes)
@@ -195,27 +196,50 @@ sed -i -e 's/NGINX_CACHE_DURATION_PLACEHOLDER/30m/g' ./apps/nginx/nginx_conf/con
         - m: Minutes (1 m = 60 seconds)
         - h: Hours (1 h = 60 minutes)
         - d: Days (1 d = 24 hours)
-    - **Recommended Values**: 
-        - Low Traffic Sites: `30m` (30 minutes)
-        - Medium Traffic Sites: `1h` (1 hour)
-        - High Traffic Sites: `6h` (6 hours)
+    - **How to choose the right cache duration?**
+        - Consider **how often your content changes**:
+          - If your content changes **rarely or never** → Choose the **longest possible duration** (e.g., `365d` or more).
+          - If your content changes **daily or frequently** → Choose a **shorter duration** (e.g., `1h` or `6h`).
+        - Consider **how fast uncached requests are handled**:
+          - If your server handles **uncached requests efficiently** → You can set a **shorter duration** and rely more on fresh requests.
+          - If your server struggles with **uncached requests (slow backend, high load)** → Use **longer durations** to maximize cache efficiency.
+        - Consider **whether you want to manually purge the cache**:
+          - If **you don’t want to manually purge** → Choose a **shorter cache duration** to allow automatic updates.
+          - If **you prefer stable performance and can purge manually if needed** → Choose **longer durations**.
 
-#### Suggested Configurations Based on Traffic Scenarios
+    - **Recommended Values**:
+        - **Static Websites or Low-Change Content**: `365d` (1 year or more)
+        - **Rarely Updated Blogs**: `30d` (1 month)
+        - **News Websites, E-Commerce, Medium Change Frequency**: `6h` (6 hours)
+        - **Frequently Updated Sites, User-Generated Content**: `1h` (1 hour)
 
-1. **Low Traffic Blog or Small Site**: 
-    - Cache Duration: `15m`
-    - Cache Size: `200m`
-    - This setup is ideal for small blogs or websites with limited traffic, providing a balance between caching efficiency and storage usage.
+#### Suggested Configurations Based on Traffic and Update Frequency
 
-2. **Medium Traffic Business Site**:
-    - Cache Duration: `1h`
-    - Cache Size: `1g`
-    - Suitable for sites with moderate traffic where performance is important, but the cache size can still be limited.
+1. **Static Website or Rarely Updated Blog**:  
+    - Cache Duration: `365d`  
+    - Cache Size: `1g`  
+    - Best for websites where content changes very rarely or never, leveraging full cache efficiency.
 
-3. **High Traffic E-commerce or News Site**:
-    - Cache Duration: `6h`
-    - Cache Size: `5g`
-    - High-traffic sites can benefit from extended cache durations and larger cache sizes to handle heavy loads and frequent user requests.
+2. **Business Site with Occasional Updates**:  
+    - Cache Duration: `30d`  
+    - Cache Size: `2g`  
+    - Works well for company websites, landing pages, or blogs with occasional content changes.
+
+3. **News, E-Commerce, or Frequently Updated Website**:  
+    - Cache Duration: `6h`  
+    - Cache Size: `5g`  
+    - Ideal for high-traffic sites where new content appears regularly, balancing cache efficiency and content freshness.
+
+4. **User-Generated Content or Real-Time Updates**:  
+    - Cache Duration: `1h`  
+    - Cache Size: `5g+`  
+    - Recommended for forums, user dashboards, or highly dynamic content where frequent updates are necessary.
+
+#### Final Thoughts:
+- **For static sites** → Use **the longest cache duration** possible (`365d` or more) for **maximum performance**.
+- **For frequently updated sites** → Use **shorter durations** (`6h`, `1h`, etc.) to ensure content stays fresh without manual purging.
+- **For sites with a mix of static and dynamic content** → Consider **separate caching rules** for different sections.
+
 
 ### .env
 
